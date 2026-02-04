@@ -1,0 +1,341 @@
+/* ================= GLOBAL RESET ================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ================= BODY ================= */
+body {
+  background: #0f172a;
+  color: #e5e7eb;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ================= APP CONTAINER ================= */
+.app {
+  max-width: 1400px;
+  margin: auto;
+  padding: 24px;
+}
+
+/* ================= HEADER ================= */
+.header {
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 2rem;
+}
+
+.header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+/* ================= GRID ================= */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* ================= CARD ================= */
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 520px; /* ✅ equal height for all 3 cards */
+}
+
+/* ================= PANEL ================= */
+.panel {
+  background: linear-gradient(180deg, #020617, #020617ee);
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.55);
+}
+
+.card .panel:last-child {
+  margin-bottom: 0;
+}
+
+.panel-title {
+  text-align: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+/* ================= LEFT & RIGHT = 2 PANELS EQUAL HEIGHT ================= */
+.card.left .panel,
+.card.right .panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= CENTER ================= */
+.card.center .panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= ANALYSIS RESULTS (CENTER FIXED) ================= */
+.card.center .analysis-box {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* background glow */
+.card.center .analysis-box::before {
+  content: "";
+  position: absolute;
+  inset: -60px;
+  background: radial-gradient(circle at top left, rgba(34,211,238,0.18), transparent 60%),
+              radial-gradient(circle at bottom right, rgba(168,85,247,0.18), transparent 60%),
+              radial-gradient(circle at center, rgba(249,115,22,0.12), transparent 70%);
+  filter: blur(18px);
+  z-index: 0;
+}
+
+.card.center .analysis-box > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ================= UPLOAD BOX ================= */
+.upload-box {
+  border: 2px dashed #334155;
+  border-radius: 14px;
+  padding: 22px;
+  text-align: center;
+}
+
+.upload-box .icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.upload-box button {
+  background: linear-gradient(90deg, #22d3ee, #a855f7);
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #020617;
+}
+
+.upload-box span {
+  display: block;
+  font-size: 12px;
+  margin-top: 6px;
+  color: #94a3b8;
+}
+
+/* error msg */
+.error-msg {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #f87171;
+  min-height: 18px;
+}
+
+/* ================= NOW PLAYING ================= */
+.now-playing-content {
+  margin-bottom: 18px;
+}
+
+.song-name {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+audio {
+  width: 100%;
+}
+
+/* ================= ANALYZE BUTTON ================= */
+.analyze {
+  width: 100%;
+  background: linear-gradient(90deg, #22d3ee, #f97316);
+  border: none;
+  padding: 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #020617;
+  margin-top: auto;
+}
+
+.analyze:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ================= WAVEFORM ================= */
+.waveform-box {
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 8px; /* ✅ space for 5 bars */
+  box-shadow: inset 0 0 0 1px rgba(34,211,238,0.08);
+}
+
+.waveform {
+  width: 100%;
+  height: 130px; /* ✅ reduced so all 5 bars fit */
+}
+
+/* ================= BAR GRAPH (TOP 5 ALWAYS VISIBLE) ================= */
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ✅ bars container takes remaining height */
+.card.center .bars {
+  flex: 1;
+  overflow: hidden; /* no scroll */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* ✅ 5 bars always visible */
+}
+
+.bar {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 8px 10px;
+  border-radius: 14px;
+  transition: 0.2s ease;
+}
+
+.bar:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.35);
+}
+
+.bar span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.bar span b {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.bar div {
+  background: rgba(30, 41, 59, 0.85);
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar div i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #22d3ee, #a855f7, #f97316);
+  border-radius: 999px;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.25);
+}
+
+/* ================= DETECTED INSTRUMENTS ================= */
+.detected {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.detected li {
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+/* ================= TIMELINE ================= */
+.timeline {
+  width: 100%;
+  height: 135px;
+}
+
+.timeline-legend {
+  display: flex;
+  gap: 18px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.timeline-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ================= EXPORT BUTTONS (BOTTOM RIGHT) ================= */
+.export-wrap {
+  position: fixed;
+  right: 28px;
+  bottom: 12px;
+  z-index: 9999;
+  display: flex;
+  gap: 10px;
+}
+
+.export-btn {
+  background: #3b82f6;
+  border: none;
+  color: white;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  transition: 0.2s ease;
+  font-size: 13px;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+}
+
+.export-pdf {
+  background: #22c55e;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    height: auto;
+  }
+
+  .card.left .panel,
+  .card.right .panel,
+  .card.center .panel {
+    flex: unset;
+  }
+
+  .export-wrap {
+    right: 16px;
+    bottom: 16px;
+  }
+}

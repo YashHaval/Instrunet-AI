@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎵 InstruNet AI: Music Instrument Recognition</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <h1>🎵 InstruNet AI: Music Instrument Recognition</h1>
+    <p>Upload. Analyze. Discover.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT -->
+    <div class="card left">
+      <div class="panel">
+        <h3 class="panel-title">Upload Audio</h3>
+
+        <div class="upload-box">
+          <div class="icon">☁️</div>
+          <input type="file" id="audioFile" accept=".mp3,.wav,.flac" hidden>
+          <button onclick="document.getElementById('audioFile').click()">Choose File</button>
+          <span>.wav, .mp3, .flac</span>
+        </div>
+      </div>
+
+      <div class="panel now-playing">
+        <h3 class="panel-title">Now Playing</h3>
+        <div class="now-playing-content">
+          <div class="song-name" id="songName">No song selected</div>
+          <audio id="audio" controls></audio>
+        </div>
+
+        <button class="analyze" id="analyzeBtn" onclick="uploadAudio()" disabled>
+          ANALYZE TRACK
+        </button>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="card center">
+      <div class="panel analysis-box">
+        <h3 class="panel-title">Analysis Results (Top 5)</h3>
+
+        <div class="waveform-box">
+          <canvas id="waveform" class="waveform"></canvas>
+        </div>
+
+        <div class="bars" id="bars"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="card right">
+      <div class="panel">
+        <h3 class="panel-title">Detected Instruments</h3>
+        <ul class="detected" id="detected"></ul>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">Instrument Timeline (REAL)</h3>
+        <div class="timeline-legend" id="legend"></div>
+        <canvas id="timeline" class="timeline"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ================= ELEMENTS ================= */
+const audio = document.getElementById("audio");
+const fileInput = document.getElementById("audioFile");
+const songName = document.getElementById("songName");
+const analyzeBtn = document.getElementById("analyzeBtn");
+
+const waveform = document.getElementById("waveform");
+const wctx = waveform.getContext("2d");
+
+const timeline = document.getElementById("timeline");
+const tctx = timeline.getContext("2d");
+
+const barsEl = document.getElementById("bars");
+const detectedEl = document.getElementById("detected");
+const legendEl = document.getElementById("legend");
+
+/* ================= CANVAS ================= */
+function resizeCanvas(){
+  waveform.width = waveform.clientWidth;
+  waveform.height = 200;
+  timeline.width = timeline.clientWidth;
+  timeline.height = 180;
+}
+window.onload = resizeCanvas;
+window.onresize = resizeCanvas;
+
+/* ================= AUDIO ANALYSER ================= */
+let audioCtx, analyser, source, dataArray;
+let waveStarted = false;
+
+/* ================= DATA ================= */
+let top5=[], top2=[], timelineData=[];
+let lastReportData=null;
+
+/* 🔑 MUST MATCH BACKEND CLASS ORDER EXACTLY */
+const instrumentIndex = {
+  "Cello":0,
+  "Clarinet":1,
+  "Flute":2,
+  "Acoustic Guitar":3,
+  "Electric Guitar":4,
+  "Organ":5,
+  "Piano":6,
+  "Saxophone":7,
+  "Trumpet":8,
+  "Violin":9,
+  "Voice":10
+};
+
+/* ================= FILE ================= */
+fileInput.addEventListener("change",()=>{
+  const file=fileInput.files[0];
+  if(!file){
+    analyzeBtn.disabled=true;
+    songName.textContent="No song selected";
+    return;
+  }
+  songName.textContent=file.name;
+  analyzeBtn.disabled=false;
+  audio.src=URL.createObjectURL(file);
+});
+
+/* ================= AUDIO SETUP ================= */
+function setupAudio(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if(!analyser){
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+  }
+
+  if(!source){
+    source = audioCtx.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+  }
+
+  if(!waveStarted){
+    drawWave();
+    waveStarted = true;
+  }
+}
+
+/* ================= WAVEFORM ================= */
+function drawWave(){
+  requestAnimationFrame(drawWave);
+  if(!analyser) return;
+
+  analyser.getByteTimeDomainData(dataArray);
+  wctx.clearRect(0,0,waveform.width,waveform.height);
+
+  const grad = wctx.createLinearGradient(0,0,waveform.width,0);
+  grad.addColorStop(0,"#22d3ee");
+  grad.addColorStop(0.5,"#a855f7");
+  grad.addColorStop(1,"#f97316");
+
+  wctx.strokeStyle = grad;
+  wctx.lineWidth = 2.5;
+  wctx.beginPath();
+
+  const slice = waveform.width / dataArray.length;
+  let x = 0;
+
+  for(let i=0;i<dataArray.length;i++){
+    const y = (dataArray[i] / 255) * waveform.height;
+    i===0 ? wctx.moveTo(x,y) : wctx.lineTo(x,y);
+    x += slice;
+  }
+  wctx.stroke();
+}
+
+/* ================= UPLOAD ================= */
+function uploadAudio(){
+  const file=fileInput.files[0];
+  if(!file) return;
+
+  const form=new FormData();
+  form.append("audio",file);
+
+  fetch("/upload",{method:"POST",body:form})
+  .then(r=>r.json())
+  .then(d=>{
+    audio.src="/uploads/"+d.filename;
+    audio.play();
+    setupAudio();        // 🔑 REQUIRED FOR WAVEFORM
+    analyze(d.filename);
+  });
+}
+
+/* ================= ANALYZE ================= */
+function analyze(filename){
+  fetch("/analyze",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({filename})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    lastReportData=d;
+
+    const sorted=Object.entries(d.average).sort((a,b)=>b[1]-a[1]);
+    top5=sorted.slice(0,5);
+    top2=sorted.slice(0,2);
+
+    renderBars();
+    renderDetected();
+    prepareTimeline();
+    renderTimeline();
+  });
+}
+
+/* ================= BARS ================= */
+function renderBars(){
+  barsEl.innerHTML="";
+  top5.forEach(([n,v])=>{
+    barsEl.innerHTML+=`
+      <div class="bar">
+        <span>${n} <b>${(v*100).toFixed(1)}%</b></span>
+        <div><i style="width:${v*100}%"></i></div>
+      </div>`;
+  });
+}
+
+/* ================= DETECTED ================= */
+function renderDetected(){
+  detectedEl.innerHTML="";
+  top5.forEach(([n,v],i)=>{
+    detectedEl.innerHTML+=`
+      <li>${i<2?"⭐":"✔"} ${n} – ${(v*100).toFixed(1)}%</li>`;
+  });
+}
+
+/* ================= TIMELINE ================= */
+function prepareTimeline(){
+  if(!lastReportData.timeline) return;
+
+  timelineData = lastReportData.timeline.map(frame =>
+    top2.map(([name]) =>
+      frame.probs[instrumentIndex[name]] || 0
+    )
+  );
+}
+
+function renderTimeline(){
+  tctx.clearRect(0,0,timeline.width,timeline.height);
+  if(!timelineData.length) return;
+
+  const pad=40;
+  const W=timeline.width-pad-10;
+  const H=timeline.height-pad-15;
+  const ox=pad;
+  const oy=H+10;
+  const step=W/(timelineData.length-1);
+  const colors=["#3b82f6","#f97316"];
+
+  legendEl.innerHTML="";
+  top2.forEach(([n],i)=>{
+    legendEl.innerHTML+=`<span style="color:${colors[i]}">● ${n}</span>`;
+  });
+
+  top2.forEach((_,idx)=>{
+    tctx.beginPath();
+    timelineData.forEach((f,i)=>{
+      const x=ox+i*step;
+      const y=oy-f[idx]*H;
+      i?tctx.lineTo(x,y):tctx.moveTo(x,y);
+    });
+    tctx.strokeStyle=colors[idx];
+    tctx.lineWidth=2.5;
+    tctx.stroke();
+  });
+}
+</script>
+
+</body>
+</html>
