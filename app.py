@@ -16,7 +16,7 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ================= DEVICE =================
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 print("Using device:", device)
 
 # ================= LOAD MODEL =================
@@ -179,4 +179,5 @@ def export_pdf():
 
 # ================= RUN =================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
